@@ -115,7 +115,14 @@ export class Config extends CConfig {
   }
   public async getPluginDeploymentProfile(pluginName: string): Promise<DeploymentProfile> {
     let pluginMap = (await this.activeDeploymentProfile)[pluginName!];
-    this._defaultLogger.debug(`Plugin state: ${ pluginName } / mapName: ${ pluginMap.mappedName } enabled: ${ pluginMap.enabled }`);
+    if (Tools.isNullOrUndefined(pluginMap)) {
+      this._defaultLogger.debug(`Plugin state: ${ pluginName } / enabled: false`);
+      return {
+        mappedName: pluginName,
+        enabled: false,
+      };
+    }
+    this._defaultLogger.debug(`Plugin state: ${ pluginName } / mapName: ${ pluginMap.mappedName } / enabled: ${ pluginMap.enabled }`);
     return pluginMap;
   }
   public async getPluginConfig<T extends IPluginConfig>(pluginName: string): Promise<T> {
@@ -152,9 +159,9 @@ export class Config extends CConfig {
       let enabled = mapName.length > 2 && mapName !== 'false';
       if (mapName.length > 0 && mapName[0] === '!') {
         enabled = false;
-        mapName = mapName.substring(1);
+        mapName = field.label!;
       }
-      this._defaultLogger.debug(`Plugin map: ${ mapName } / enabled:${ enabled }`);
+      this._defaultLogger.debug(`Plugin map: [${ field.label }]=${ mapName } / enabled:${ enabled }`);
       deploymentProfile[field.label || '-X-X-X-'] = {
         mappedName: mapName,
         enabled: enabled
