@@ -1,5 +1,6 @@
 import { CConfig, DeploymentProfile, DeploymentProfiles, IPluginConfig, IPluginLogger, ServiceConfig } from "@bettercorp/service-base/lib/ILib";
 import {
+  FieldType,
   FullItem, OnePasswordConnect,
   Vault
 } from "@1password/connect";
@@ -126,7 +127,8 @@ export class Config extends CConfig {
     return pluginMap;
   }
   public async getPluginConfig<T extends IPluginConfig>(pluginName: string): Promise<T> {
-    return (this._appConfig.plugins[pluginName] || {}) as T;
+    let mappedName = (await this.getPluginDeploymentProfile(pluginName)).mappedName;
+    return (this._appConfig.plugins[mappedName] || {}) as T;
   }
 
   private async parseDeploymentProfile(item: FullItem): Promise<IDictionary<DeploymentProfile>> {
@@ -167,7 +169,6 @@ export class Config extends CConfig {
         enabled: enabled
       };
     }
-    console.log(deploymentProfile);
     return deploymentProfile;
   }
   private async parseDeploymentProfileDebug(item: FullItem): Promise<void> {
@@ -192,9 +193,8 @@ export class Config extends CConfig {
     }
   }
 
-  private async parsePluginConfig(item: FullItem): Promise<any> {
+  private parsePluginConfig(item: FullItem): any {
     let config: any = {};
-    let unmappedConfig: any = {};
 
     let mappingKeys = [
       'Config'
@@ -208,18 +208,15 @@ export class Config extends CConfig {
 
     for (let field of (item.fields || [])) {
       if (mappingIds.indexOf((field.section || { id: '-X-X-X-' }).id || '-X-X-X-') < 0) continue;
-      unmappedConfig[field.label || '-X-X-X-'] = field.value || '-X-X-X-';
-    }
-
-    for (let configVar of Object.keys(unmappedConfig)) {
-      let value = unmappedConfig[configVar];
+      let value: any = field.value || undefined;
       if (value === 'undefined') value = undefined;
       else if (value === 'null') value = null;
       else if (value === 'true') value = true;
       else if (value === 'false') value = false;
       else if (Tools.isNumber(value)) value = Number.parseFloat(value);
 
-      config = Tools.setUpdatedTemplatePathFinder(configVar, value, config);
+      this._defaultLogger.debug(`Map config [${ item.title! }] (${ field.label })=(${ [FieldType.Concealed, FieldType.Totp].indexOf(field.type!) >= 0 ? '******' : value })`);
+      config = Tools.setUpdatedTemplatePathFinder(field.label!, value, config);
     }
 
     return config;
