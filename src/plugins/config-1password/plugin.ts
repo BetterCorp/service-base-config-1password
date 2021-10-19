@@ -86,9 +86,11 @@ export class Config extends CConfig {
 
     let serverURL = process.env.BSB_OP_SERVER_URL;
     let token = process.env.BSB_OP_TOKEN;
+    let vaultId = process.env.BSB_OP_VAULT;
 
     if (Tools.isNullOrUndefined(serverURL) || serverURL === '') throw `ENV BSB_OP_SERVER_URL is not defined for OnePassword Server Url`;
     if (Tools.isNullOrUndefined(token) || token === '') throw `ENV BSB_OP_TOKEN is not defined for OnePassword Token`;
+    if (Tools.isNullOrUndefined(vaultId) || vaultId === '') throw `ENV BSB_OP_VAULT is not defined for OnePassword Vault ID`;
 
     this.onePassword = OnePasswordConnect({
       serverURL: serverURL!,
@@ -226,7 +228,7 @@ export class Config extends CConfig {
     return new Promise(async (resolve, reject) => {
       self._defaultLogger.info(`Load 1Pass plugin: ${ pluginName }`);
       try {
-        const namedItem = await self.onePassword.getItemByTitle('kinrbtplatsckiakzo4mg7rpii', pluginName);
+        const namedItem = await self.onePassword.getItemByTitle(process.env.BSB_OP_VAULT!, pluginName);
         resolve(self.parsePluginConfig(namedItem));
       } catch (exc) {
         self._defaultLogger.fatal(`Cannot find plugin ${ pluginName }`);
@@ -240,7 +242,7 @@ export class Config extends CConfig {
     return new Promise(async (resolve, reject) => {
       self._defaultLogger.info(`Load 1Pass profile: profile-${ this._deploymentProfile }`);
       try {
-        const namedItem = await self.onePassword.getItemByTitle('kinrbtplatsckiakzo4mg7rpii', `profile-${ this._deploymentProfile }`);
+        const namedItem = await self.onePassword.getItemByTitle(process.env.BSB_OP_VAULT!, `profile-${ this._deploymentProfile }`);
         self._appConfig = {
           deploymentProfiles: {},
           plugins: {}
