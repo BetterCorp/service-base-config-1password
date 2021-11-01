@@ -3,13 +3,13 @@ import { CPluginClient } from "@bettercorp/service-base/lib/ILib";
 import { OPConnectItemBuild, OPConnectItemParsed, SimpleItem } from '../../OPConnect';
 import { MyPluginConfig } from './sec.config';
 
-export class onePassword extends CPluginClient<MyPluginConfig> {
+export class onePassword<Parsed = OPConnectItemParsed, Build = OPConnectItemBuild> extends CPluginClient<MyPluginConfig> {
   public readonly _pluginName: string = "1password";
 
-  public async getParsedItemByTitle(title: string, vaultId?: string): Promise<OPConnectItemParsed> {
+  public async getParsedItemByTitle(title: string, vaultId?: string): Promise<Parsed> {
     return this.initForPlugins('getParsedItemByTitle', title, vaultId);
   }
-  public async getParsedItemById(id: string, vaultId?: string): Promise<OPConnectItemParsed> {
+  public async getParsedItemById(id: string, vaultId?: string): Promise<Parsed> {
     return this.initForPlugins('getParsedItemById', id, vaultId);
   }
   public async getVault(vaultId?: string): Promise<Vault> {
@@ -21,10 +21,10 @@ export class onePassword extends CPluginClient<MyPluginConfig> {
   public async listItems(vaultId?: string): Promise<Array<SimpleItem>> {
     return this.initForPlugins('listItems', vaultId);
   }
-  public async createItem(title: string, category: FullItem.CategoryEnum, item: OPConnectItemBuild, tags?: Array<string>, vaultId?: string): Promise<OPConnectItemParsed> {
+  public async createItem(title: string, category: FullItem.CategoryEnum, item: Build, tags?: Array<string>, vaultId?: string): Promise<Parsed> {
     return (this.initForPlugins as any)('createItem', title, category, item, tags, vaultId);
   }
-  public async replaceItem(item: OPConnectItemParsed, vaultId?: string): Promise<OPConnectItemParsed> {
+  public async replaceItem(item: Parsed, vaultId?: string): Promise<Parsed> {
     return (this.initForPlugins as any)('replaceItem', item, vaultId);
   }
 }
