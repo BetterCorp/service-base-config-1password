@@ -1,84 +1,10 @@
 import { CConfig, DeploymentProfile, DeploymentProfiles, IPluginConfig, IPluginLogger, ServiceConfig } from "@bettercorp/service-base/lib/ILib";
-import {
-  FieldType,
-  FullItem, OnePasswordConnect,
-  Vault
-} from "@1password/connect";
 import { IDictionary } from '@bettercorp/tools/lib/Interfaces';
 import { Tools } from '@bettercorp/tools/lib/Tools';
-
-interface OPConnect {
-  /**
-   * Returns a list of all Vaults the Service Account has permission
-   * to view.
-   *
-   * @returns {Promise<Vault[]>}
-   */
-  listVaults(): Promise<Vault[]>;
-  /**
-   * Get details about a specific vault.
-   *
-   * If the Service Account does not have permission to view the vault, an
-   * error is returned.
-   *
-   * @param {string} vaultId
-   * @returns {Promise<Vault>}
-   */
-  getVault(vaultId: string): Promise<Vault>;
-  /**
-   * Lists all Items inside a specific Vault.
-   *
-   * @param {string} vaultId
-   * @returns {Promise<SimpleItem[]>}
-   */
-  listItems(vaultId: string): Promise<any[]>;
-  /**
-   * Get details about a specific Item in a Vault.
-   *
-   * @param {string} vaultId
-   * @param {string} itemId
-   * @returns {Promise<FullItem>}
-   */
-  getItem(vaultId: string, itemId: string): Promise<FullItem>;
-  /**
-   * Get details about a specific item with a matching Title value.
-   *
-   * The Item Title is case-sensitive and must be an exact-match.
-   *
-   * @param {string} vaultId
-   * @param {string} title
-   * @returns {Promise<FullItem>}
-   */
-  getItemByTitle(vaultId: string, title: string): Promise<FullItem>;
-  /**
-   * Creates a new Item inside the specified Vault.
-   *
-   * @param {string} vaultId
-   * @param {FullItem} item
-   * @returns {Promise<FullItem>}
-   */
-  createItem(vaultId: string, item: FullItem): Promise<FullItem>;
-  /**
-   * Perform a replacement update of an Item. The given `item` object will
-   * overwrite the existing item in the Vault.
-   *
-   * @param {string} vaultId
-   * @param {FullItem} item
-   * @returns {Promise<FullItem>}
-   */
-  updateItem(vaultId: string, item: FullItem): Promise<FullItem>;
-  /**
-   * Deletes a single Item matching the given Item ID.
-   *
-   * @param {string} vaultId
-   * @param {string} itemId
-   * @returns {Promise<void>}
-   */
-  deleteItem(vaultId: string, itemId: string): Promise<void>;
-}
+import { OPConnector } from '../../OPConnect';
 
 export class Config extends CConfig {
-  private onePassword: OPConnect;
+  private onePassword: OPConnector;
   private _appConfig!: ServiceConfig;
 
   constructor(logger: IPluginLogger, cwd: string, deploymentProfile: string) {
@@ -92,11 +18,7 @@ export class Config extends CConfig {
     if (Tools.isNullOrUndefined(token) || token === '') throw `ENV BSB_OP_TOKEN is not defined for OnePassword Token`;
     if (Tools.isNullOrUndefined(vaultId) || vaultId === '') throw `ENV BSB_OP_VAULT is not defined for OnePassword Vault ID`;
 
-    this.onePassword = OnePasswordConnect({
-      serverURL: serverURL!,
-      token: token!,
-      keepAlive: true,
-    });
+    this.onePassword = new OPConnector(serverURL!, token!, vaultId!);
 
     if (!Tools.isNullOrUndefined(process.env.BSB_LIVE)) {
       this._runningLive = true;
@@ -133,7 +55,7 @@ export class Config extends CConfig {
     return (this._appConfig.plugins[mappedName] || {}) as T;
   }
 
-  private async parseDeploymentProfile(item: FullItem): Promise<IDictionary<DeploymentProfile>> {
+  private async parseDeploymentProfile(parsedItem: any): Promise<IDictionary<DeploymentProfile>> {
     let deploymentProfile: IDictionary<DeploymentProfile> = {};
 
     let mappingKeys = [
@@ -141,95 +63,31 @@ export class Config extends CConfig {
       'Plugin Maps (Logging)',
       'Plugin Maps (Plugins)'
     ];
-    let mappingIds: Array<string> = [];
-
-    for (let section of (item.sections || [])) {
-      if (!Tools.isNullOrUndefined(section.id) && mappingKeys.indexOf(section.label || '') >= 0) {
-        this._defaultLogger.debug(`OP Profile Section Found: ${ section.label }`);
-        mappingIds.push(section.id!);
+    for (let fieldKey of mappingKeys) {
+      for (let pluginDef of Object.keys(parsedItem[fieldKey])) {
+        let mapName = parsedItem[fieldKey][pluginDef];
+        let enabled = mapName.length > 2 && mapName !== 'false' && mapName !== false;
+        if (mapName.length > 0 && mapName[0] === '!') {
+          enabled = false;
+          mapName = pluginDef;
+        }
+        this._defaultLogger.debug(`Plugin map: [${ pluginDef }]=${ mapName } / enabled:${ enabled }`);
+        deploymentProfile[pluginDef] = {
+          mappedName: mapName,
+          enabled: enabled
+        };
       }
-      else
-        this._defaultLogger.debug(`OP Profile Info Section: ${ section.label }`);
-    }
-
-    for (let field of (item.fields || [])) {
-      let fieldSect: string | null = (field.section || { id: null }).id || null;
-      if (!Tools.isString(fieldSect)) continue;
-      if (!Tools.isString(field.label)) continue;
-      if (mappingIds.indexOf(fieldSect!) < 0) continue;
-      if (field.label === '') continue;
-
-      let mapName = field.value || '';
-      let enabled = mapName.length > 2 && mapName !== 'false';
-      if (mapName.length > 0 && mapName[0] === '!') {
-        enabled = false;
-        mapName = field.label!;
-      }
-      this._defaultLogger.debug(`Plugin map: [${ field.label }]=${ mapName } / enabled:${ enabled }`);
-      deploymentProfile[field.label || '-X-X-X-'] = {
-        mappedName: mapName,
-        enabled: enabled
-      };
     }
     return deploymentProfile;
   }
-  private async parseDeploymentProfileDebug(item: FullItem): Promise<void> {
-    let mappingKeys = [
-      'Profile Info'
-    ];
-    let mappingIds: Array<string> = [];
 
-    for (let section of (item.sections || [])) {
-      if (!Tools.isNullOrUndefined(section.id) && mappingKeys.indexOf(section.label || '') >= 0) {
-        this._defaultLogger.debug(`OP Profile Section Found: ${ section.label }`);
-        mappingIds.push(section.id!);
-      }
-      else
-        this._defaultLogger.debug(`OP Profile Info Section: ${ section.label }`);
-    }
-
-    for (let field of (item.fields || [])) {
-      if (mappingIds.indexOf((field.section || { id: '' }).id || '*****') < 0) continue;
-      this._debugMode = `${ field.value || true }` == 'true';
-      return;
-    }
-  }
-
-  private parsePluginConfig(item: FullItem): any {
-    let config: any = {};
-
-    let mappingKeys = [
-      'Config'
-    ];
-    let mappingIds: Array<string> = [];
-
-    for (let section of (item.sections || [])) {
-      if (mappingKeys.indexOf(section.label || '') >= 0)
-        mappingIds.push(section.id || '-X-X-X-');
-    }
-
-    for (let field of (item.fields || [])) {
-      if (mappingIds.indexOf((field.section || { id: '-X-X-X-' }).id || '-X-X-X-') < 0) continue;
-      let value: any = field.value || undefined;
-      if (value === 'undefined') value = undefined;
-      else if (value === 'null') value = null;
-      else if (value === 'true') value = true;
-      else if (value === 'false') value = false;
-      else if (Tools.isNumber(value)) value = Number.parseFloat(value);
-
-      this._defaultLogger.debug(`Map config [${ item.title! }] (${ field.label })=(${ [FieldType.Concealed, FieldType.Totp].indexOf(field.type!) >= 0 ? '******' : value })`);
-      config = Tools.setUpdatedTemplatePathFinder(field.label!, value, config);
-    }
-
-    return config;
-  }
   private async getOPPluginConfig(pluginName: string): Promise<any> {
     const self = this;
     return new Promise(async (resolve, reject) => {
       self._defaultLogger.info(`Load 1Pass plugin: ${ pluginName }`);
       try {
-        const namedItem = await self.onePassword.getItemByTitle(process.env.BSB_OP_VAULT!, pluginName);
-        resolve(self.parsePluginConfig(namedItem));
+        const parsedItem = await self.onePassword.getParsedItemByTitle(pluginName);
+        resolve(parsedItem.Config);
       } catch (exc) {
         self._defaultLogger.fatal(`Cannot find plugin ${ pluginName }`);
         reject();
@@ -242,15 +100,17 @@ export class Config extends CConfig {
     return new Promise(async (resolve, reject) => {
       self._defaultLogger.info(`Load 1Pass profile: profile-${ this._deploymentProfile }`);
       try {
-        const namedItem = await self.onePassword.getItemByTitle(process.env.BSB_OP_VAULT!, `profile-${ this._deploymentProfile }`);
+        const parsedPluginConfig = await self.onePassword.getParsedItemByTitle(`profile-${ this._deploymentProfile }`);
+        self._debugMode = `${ parsedPluginConfig['Profile Info'].debug || true }` == 'true';
+
         self._appConfig = {
           deploymentProfiles: {},
           plugins: {}
         } as any;
 
         self._defaultLogger.info('- Got profile, parsing plugins now');
-        self._appConfig.deploymentProfiles[self._deploymentProfile] = await self.parseDeploymentProfile(namedItem) as any;
-        await self.parseDeploymentProfileDebug(namedItem);
+        self._appConfig.deploymentProfiles[self._deploymentProfile] = await self.parseDeploymentProfile(parsedPluginConfig) as any;
+        
         for (let deploymentProfilePlugin of Object.keys(self._appConfig.deploymentProfiles[self._deploymentProfile])) {
           let pluginDep = (self._appConfig.deploymentProfiles[self._deploymentProfile] as any)[deploymentProfilePlugin] as DeploymentProfile;
           self._defaultLogger.debug(`CHECK plugin definition: ${ deploymentProfilePlugin }=${ pluginDep.mappedName } [${ pluginDep.enabled ? 'enabled' : 'disabled' }]`);
