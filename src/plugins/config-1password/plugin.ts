@@ -67,11 +67,13 @@ export class Config extends CConfig {
       for (let pluginDef of Object.keys(parsedItem[fieldKey])) {
         let mapName = parsedItem[fieldKey][pluginDef];
         let enabled = mapName.length > 2 && mapName !== 'false' && mapName !== false;
+        let sDisabled = false;
         if (mapName.length > 0 && mapName[0] === '!') {
           enabled = false;
+          sDisabled = true;
           mapName = mapName.substring(1);
         }
-        this._defaultLogger.debug(`Plugin map: [${ pluginDef }]=${ mapName } / enabled:${ enabled }`);
+        this._defaultLogger.debug(`Plugin map: [${ pluginDef }]=${ mapName } / enabled:${ enabled } / disabled but named: better${sDisabled}`);
         deploymentProfile[pluginDef] = {
           mappedName: mapName,
           enabled: enabled

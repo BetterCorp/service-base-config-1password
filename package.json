@@ -18,8 +18,8 @@
   "version": "1.2.0",
   "dependencies": {
     "@1password/connect": "^1.0.4",
-    "@bettercorp/service-base": "^6.0.20211117225052",
-    "@bettercorp/tools": "^1.2.20211118005617",
+    "@bettercorp/service-base": "^6.0.20211118010826",
+    "@bettercorp/tools": "^1.2.20211118015545",
     "@types/node": "^16.11.7"
   },
   "devDependencies": {
