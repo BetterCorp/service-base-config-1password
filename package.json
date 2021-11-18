@@ -18,8 +18,8 @@
   "version": "1.2.0",
   "dependencies": {
     "@1password/connect": "^1.0.4",
-    "@bettercorp/service-base": "^6.0.20211116225325",
-    "@bettercorp/tools": "^1.2.20211101100533",
+    "@bettercorp/service-base": "^6.0.20211117225052",
+    "@bettercorp/tools": "^1.2.20211118005617",
     "@types/node": "^16.11.7"
   },
   "devDependencies": {
@@ -27,7 +27,7 @@
     "@typescript-eslint/parser": "^5.4.0",
     "eslint": "^8.2.0",
     "ts-node": "^10.4.0",
-    "typescript": "^4.4.4"
+    "typescript": "^4.5.2"
   },
   "bsb_project": true
 }

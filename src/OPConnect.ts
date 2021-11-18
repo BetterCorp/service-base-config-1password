@@ -141,7 +141,12 @@ export class OPConnector {
       else if (value === 'null') value = null;
       else if (value === 'true') value = true;
       else if (value === 'false') value = false;
-      else if (Tools.isNumber(value)) value = Number.parseFloat(value);
+      else {
+        let isNumber = Tools.isStringNumber(value);
+        if (isNumber.status) {
+          value = isNumber.value;
+        }
+      }
 
       //this._defaultLogger.debug(`Map config [${ item.title! }] (${ field.label })=(${ [FieldType.Concealed, FieldType.Totp].indexOf(field.type!) >= 0 ? '******' : value })`);
       let alreadySetToArray = Tools.GetValueFromObjectBasedOnStringPath(config[mappingKeys[(field.section || { id: '_' }).id || '_'] || '_'], field.label!);
