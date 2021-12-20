@@ -2,12 +2,12 @@
   "name": "@bettercorp/service-base-plugin-config-1password",
   "license": "AGPL-3.0-only",
   "repository": {
-    "url": "https://gitlab.com/BetterCorp/public/service-base-plugin-config-1password"
+    "url": "https://gitlab.com/BetterCorp/BetterServiceBase/service-base-plugin-config-1password"
   },
   "scripts": {
-    "dev": "nodemon -L --watch src/**/*.ts --watch sec.config.json --exec ts-node node_modules/@bettercorp/service-base/lib/index.js",
+    "dev": "nodemon --config node_modules/@bettercorp/service-base/build/nodemon.json",
     "build": "tsc",
-    "version": "node ./node_modules/@bettercorp/service-base/build/version-internal.js $0",
+    "version": "node ./node_modules/@bettercorp/service-base/build/version-bcorp.js $0",
     "create": "ts-node node_modules/@bettercorp/service-base/lib/bootstrap.js $0",
     "start": "ts-node node_modules/@bettercorp/service-base/lib/index.js"
   },
@@ -18,16 +18,16 @@
   "version": "1.2.0",
   "dependencies": {
     "@1password/connect": "^1.0.4",
-    "@bettercorp/service-base": "^6.0.20211118010826",
+    "@bettercorp/service-base": "^6.1.20211220164149",
     "@bettercorp/tools": "^1.2.20211118015545",
-    "@types/node": "^16.11.7"
+    "@types/node": "^16.11.14"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.4.0",
-    "@typescript-eslint/parser": "^5.4.0",
-    "eslint": "^8.2.0",
+    "@typescript-eslint/eslint-plugin": "^5.8.0",
+    "@typescript-eslint/parser": "^5.8.0",
+    "eslint": "^8.5.0",
     "ts-node": "^10.4.0",
-    "typescript": "^4.5.2"
+    "typescript": "^4.5.4"
   },
   "bsb_project": true
 }
