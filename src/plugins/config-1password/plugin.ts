@@ -1,4 +1,5 @@
-import { CConfig, DeploymentProfile, DeploymentProfiles, IPluginConfig, IPluginLogger, ServiceConfig } from "@bettercorp/service-base/lib/ILib";
+import { CConfig, DeploymentProfile, DeploymentProfiles, IPluginConfig, ServiceConfig } from "@bettercorp/service-base/lib/interfaces/config";
+import { IPluginLogger } from '@bettercorp/service-base/lib/interfaces/logger';
 import { IDictionary } from '@bettercorp/tools/lib/Interfaces';
 import { Tools } from '@bettercorp/tools/lib/Tools';
 import { OPConnector } from '../../OPConnect';
@@ -73,7 +74,7 @@ export class Config extends CConfig {
           sDisabled = true;
           mapName = mapName.substring(1);
         }
-        this._defaultLogger.debug(`Plugin map: [${ pluginDef }]=${ mapName } / enabled:${ enabled } / disabled but named: better${sDisabled}`);
+        this._defaultLogger.debug(`Plugin map: [${ pluginDef }]=${ mapName } / enabled:${ enabled } / disabled but named: better${ sDisabled }`);
         deploymentProfile[pluginDef] = {
           mappedName: mapName,
           enabled: enabled
@@ -112,7 +113,7 @@ export class Config extends CConfig {
 
         self._defaultLogger.info('- Got profile, parsing plugins now');
         self._appConfig.deploymentProfiles[self._deploymentProfile] = await self.parseDeploymentProfile(parsedPluginConfig) as any;
-        
+
         for (let deploymentProfilePlugin of Object.keys(self._appConfig.deploymentProfiles[self._deploymentProfile])) {
           let pluginDep = (self._appConfig.deploymentProfiles[self._deploymentProfile] as any)[deploymentProfilePlugin] as DeploymentProfile;
           self._defaultLogger.debug(`CHECK plugin definition: ${ deploymentProfilePlugin }=${ pluginDep.mappedName } [${ pluginDep.enabled ? 'enabled' : 'disabled' }]`);
