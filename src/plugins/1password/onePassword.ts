@@ -1,5 +1,5 @@
 import { FullItem, Vault } from '@1password/connect';
-import { CPluginClient, IPlugin } from "@bettercorp/service-base/lib/ILib";
+import { CPluginClient, IPlugin } from "@bettercorp/service-base/lib/interfaces/plugins";
 import { OPConnectItemBuild, OPConnectItemParsed, SimpleItem } from '../../OPConnect';
 import { MyPluginConfig } from './sec.config';
 
