@@ -2,3 +2,7 @@
 node_modules
 /docker
 /sec.config.json
+/node_modules
+/_exports
+/junit.xml
+/test-file-*
