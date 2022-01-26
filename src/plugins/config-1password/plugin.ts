@@ -117,7 +117,7 @@ export class Config extends CConfig {
         for (let deploymentProfilePlugin of Object.keys(self._appConfig.deploymentProfiles[self._deploymentProfile])) {
           let pluginDep = (self._appConfig.deploymentProfiles[self._deploymentProfile] as any)[deploymentProfilePlugin] as DeploymentProfile;
           self._defaultLogger.debug(`CHECK plugin definition: ${ deploymentProfilePlugin }=${ pluginDep.mappedName } [${ pluginDep.enabled ? 'enabled' : 'disabled' }]`);
-          if (!pluginDep.enabled) continue;
+          //if (!pluginDep.enabled) continue;
           try {
             self._appConfig.plugins[pluginDep.mappedName] = await self.getOPPluginConfig(pluginDep.mappedName);
           } catch (xc) {
