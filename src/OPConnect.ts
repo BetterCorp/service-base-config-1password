@@ -198,8 +198,8 @@ export class OPConnector {
       if (sect.indexOf('_') === 0 && sect.length > 2) continue;
       flattened[sect] = Tools.flattenObject(item[sect]);
     }
-    console.log(flattened);
     for (let sect of Object.keys(flattened)) {
+      newItem = newItem.addSection(sect);
       for (let fieldItem of Object.keys(flattened[sect])) {
         newItem = newItem.addField({
           label: fieldItem,
