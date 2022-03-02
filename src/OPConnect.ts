@@ -1,6 +1,6 @@
 import { FieldType, FullItem, ItemBuilder, OnePasswordConnect, Vault } from "@1password/connect";
 import { FullItemAllOfFields } from '@1password/connect/dist/model/fullItemAllOfFields';
-import { CPlugin, CPluginClient } from '@bettercorp/service-base/lib/interfaces/plugins';
+import { CPlugin } from '@bettercorp/service-base/lib/interfaces/plugins';
 import { IDictionary } from '@bettercorp/tools/lib/Interfaces';
 import { Tools } from '@bettercorp/tools/lib/Tools';
 
