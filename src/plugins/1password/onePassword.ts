@@ -31,6 +31,6 @@ export class onePassword<Parsed = OPConnectItemParsed, Build = OPConnectItemBuil
     return (this.initForPlugins as any)('createItem', title, category, item, tags, vaultId || this.vaultId);
   }
   public async replaceItem(item: Parsed, vaultId?: string): Promise<Parsed> {
-    return (this.initForPlugins as any)('replaceItem', item, vaultId || this.vaultId);
+    return (this.initForPlugins as any)('replaceItem', item, vaultId || this.vaultId, this.refPlugin);
   }
 }

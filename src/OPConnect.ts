@@ -1,5 +1,6 @@
 import { FieldType, FullItem, ItemBuilder, OnePasswordConnect, Vault } from "@1password/connect";
 import { FullItemAllOfFields } from '@1password/connect/dist/model/fullItemAllOfFields';
+import { CPlugin, CPluginClient } from '@bettercorp/service-base/lib/interfaces/plugins';
 import { IDictionary } from '@bettercorp/tools/lib/Interfaces';
 import { Tools } from '@bettercorp/tools/lib/Tools';
 
@@ -279,8 +280,16 @@ export class OPConnector {
 
     return newItem;
   }
-  public async replaceItem(item: OPConnectItemParsed, vaultId?: string): Promise<OPConnectItemParsed> {
-    let createdItem = await this.onePassword.updateItem(this.getVaultId(vaultId), await this.rebuildItem(item));
+  public async replaceItem(item: OPConnectItemParsed, vaultId?: string, self?: CPlugin): Promise<OPConnectItemParsed> {
+    const actVaultId = this.getVaultId(vaultId);
+    if (self) {
+      self.log.debug(`UPDATE ITEM /${ item._ref.id }/ VAULT: ${ actVaultId }`);
+    }
+    const rebuiltItem = await this.rebuildItem(item);
+    if (self) {
+      self.log.debug(rebuiltItem);
+    }
+    const createdItem = await this.onePassword.updateItem(actVaultId, rebuiltItem);
     return this.parseItem(createdItem);
   }
 }

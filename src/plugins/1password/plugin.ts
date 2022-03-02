@@ -39,6 +39,6 @@ export class Plugin extends CPlugin<MyPluginConfig> {
     return await this.onePassword.createItem(title, category, item, tags, await this._getVaultId(vaultId));
   }
   public async replaceItem(item: OPConnectItemParsed, vaultId?: string): Promise<OPConnectItemParsed> {
-    return await this.onePassword.replaceItem(item, await this._getVaultId(vaultId));
+    return await this.onePassword.replaceItem(item, await this._getVaultId(vaultId), this);
   }
 }
