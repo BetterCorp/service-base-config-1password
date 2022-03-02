@@ -282,12 +282,12 @@ export class OPConnector {
   }
   public async replaceItem(item: OPConnectItemParsed, vaultId?: string, self?: CPlugin): Promise<OPConnectItemParsed> {
     const actVaultId = this.getVaultId(vaultId);
-    if (self) {
+    if (self && self.appConfig.runningInDebug) {      
       self.log.debug(`UPDATE ITEM /${ item._ref.id }/ VAULT: ${ actVaultId }`);
     }
     const rebuiltItem = await this.rebuildItem(item);
-    if (self) {
-      self.log.debug(rebuiltItem);
+    if (self && self.appConfig.runningInDebug) {
+      self.log.debug(JSON.stringify(rebuiltItem, null, 2));
     }
     const createdItem = await this.onePassword.updateItem(actVaultId, rebuiltItem);
     return this.parseItem(createdItem);
