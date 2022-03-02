@@ -20,10 +20,10 @@ export class Plugin extends CPlugin<MyPluginConfig> {
   }
 
   public async getParsedItemByTitle(title: string, vaultId?: string): Promise<OPConnectItemParsed> {
-    return await this.onePassword.getParsedItemByTitle(title, await this._getVaultId(vaultId));
+    return await this.onePassword.getParsedItemByTitle(title, await this._getVaultId(vaultId), this);
   }
   public async getParsedItemById(id: string, vaultId?: string): Promise<OPConnectItemParsed> {
-    return await this.onePassword.getParsedItemById(id, await this._getVaultId(vaultId));
+    return await this.onePassword.getParsedItemById(id, await this._getVaultId(vaultId), this);
   }
   public async getVault(vaultId?: string): Promise<Vault> {
     return await this.onePassword.getVault(await this._getVaultId(vaultId));
@@ -36,7 +36,7 @@ export class Plugin extends CPlugin<MyPluginConfig> {
     return await this.onePassword.listItems(await this._getVaultId(vaultId));
   }
   public async createItem(title: string, category: FullItem.CategoryEnum, item: OPConnectItemBuild, tags?: Array<string>, vaultId?: string): Promise<OPConnectItemParsed> {
-    return await this.onePassword.createItem(title, category, item, tags, await this._getVaultId(vaultId));
+    return await this.onePassword.createItem(title, category, item, tags, await this._getVaultId(vaultId), this);
   }
   public async replaceItem(item: OPConnectItemParsed, vaultId?: string): Promise<OPConnectItemParsed> {
     return await this.onePassword.replaceItem(item, await this._getVaultId(vaultId), this);
