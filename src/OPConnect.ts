@@ -210,7 +210,7 @@ export class OPConnector {
     for (let sect of Object.keys(flattened)) {
       newItem = newItem.addSection(sect);
       for (let fieldItem of Object.keys(flattened[sect])) {
-        let endValue = `${ flattened[sect][fieldItem] || '' }`;
+        let endValue = `${ flattened[sect][fieldItem] || 'undefined' }`;
         if (Tools.isUndefined(flattened[sect][fieldItem]))
           endValue = 'undefined';
         if (Tools.isNull(flattened[sect][fieldItem]))
@@ -275,6 +275,12 @@ export class OPConnector {
             break;
           }
         }
+        let endValue = `${ flattened[flatItem][iField] || 'undefined' }`;
+        if (Tools.isUndefined(flattened[flatItem][iField]))
+          endValue = 'undefined';
+        if (Tools.isNull(flattened[flatItem][iField]))
+          endValue = 'null';
+
         if (found === null) {
           // add
           newItem.fields!.push({
@@ -283,11 +289,11 @@ export class OPConnector {
             section: {
               id: section
             },
-            value: Tools.isUndefined(flattened[flatItem][iField]) ? undefined : `${ flattened[flatItem][iField] }`
+            value: endValue
           });
         } else {
           newItem.fields![findFieldIndexById(found.id) as any].type = item._fieldDefinitions[flatItem][iField] || FieldType.String;
-          newItem.fields![findFieldIndexById(found.id) as any].value = Tools.isUndefined(flattened[flatItem][iField]) ? undefined : `${ flattened[flatItem][iField] }`;
+          newItem.fields![findFieldIndexById(found.id) as any].value = endValue;
         }
       }
     }
