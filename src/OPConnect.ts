@@ -141,13 +141,13 @@ export class OPConnector {
     }
 
     for (let field of (item.fields || [])) {
-      let value: any = field.value || undefined;
-      if (value === 'undefined') value = undefined;
-      else if (value === 'null') value = null;
-      else if (value === 'true') value = true;
-      else if (value === 'false') value = false;
+      let value: any = `${field.value}`;
+      if (field.value === 'undefined') value = undefined;
+      else if (field.value === 'null') value = null;
+      else if (field.value === 'true') value = true;
+      else if (field.value === 'false') value = false;
       else {
-        let isNumber = Tools.isStringNumber(value);
+        let isNumber = Tools.isStringNumber(field.value);
         if (isNumber.status) {
           value = isNumber.value;
         }
@@ -210,7 +210,7 @@ export class OPConnector {
     for (let sect of Object.keys(flattened)) {
       newItem = newItem.addSection(sect);
       for (let fieldItem of Object.keys(flattened[sect])) {
-        let endValue = `${ flattened[sect][fieldItem] || 'undefined' }`;
+        let endValue = `${ flattened[sect][fieldItem] || '' }`;
         if (Tools.isUndefined(flattened[sect][fieldItem]))
           endValue = 'undefined';
         if (Tools.isNull(flattened[sect][fieldItem]))
@@ -275,7 +275,7 @@ export class OPConnector {
             break;
           }
         }
-        let endValue = `${ flattened[flatItem][iField] || 'undefined' }`;
+        let endValue = `${ flattened[flatItem][iField] || '' }`;
         if (Tools.isUndefined(flattened[flatItem][iField]))
           endValue = 'undefined';
         if (Tools.isNull(flattened[flatItem][iField]))
