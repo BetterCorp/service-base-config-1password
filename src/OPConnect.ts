@@ -121,7 +121,7 @@ export class OPConnector {
 
   private parseItem(item: FullItem, self?: CPlugin): any {
     if (self && self.appConfig.runningInDebug) {
-      self.log.debug(`ParseItem: ${item.id}`);
+      self.log.debug(`ParseItem: ${ item.id }`);
       self.log.debug(JSON.stringify(item, null, 2));
     }
     let config: any = {
@@ -169,7 +169,7 @@ export class OPConnector {
     }
 
     if (self && self.appConfig.runningInDebug) {
-      self.log.debug(`ParseDItem: ${item.id}`);
+      self.log.debug(`ParseDItem: ${ item.id }`);
       self.log.debug(JSON.stringify(config, null, 2));
     }
     return config;
@@ -210,9 +210,15 @@ export class OPConnector {
     for (let sect of Object.keys(flattened)) {
       newItem = newItem.addSection(sect);
       for (let fieldItem of Object.keys(flattened[sect])) {
+        let endValue = `${ flattened[sect][fieldItem] || '' }`;
+        if (Tools.isUndefined(flattened[sect][fieldItem]))
+          endValue = 'undefined';
+        if (Tools.isNull(flattened[sect][fieldItem]))
+          endValue = 'null';
+
         newItem = newItem.addField({
           label: fieldItem,
-          value: Tools.isUndefined(flattened[sect][fieldItem]) ? undefined : `${ flattened[sect][fieldItem] }`,
+          value: endValue,
           sectionName: sect === '_' ? undefined : sect,
           type: (item._fieldDefinitions[sect] || {})[fieldItem] || FullItemAllOfFields.TypeEnum.String
         });
@@ -290,7 +296,7 @@ export class OPConnector {
   }
   public async replaceItem(item: OPConnectItemParsed, vaultId?: string, self?: CPlugin): Promise<OPConnectItemParsed> {
     const actVaultId = this.getVaultId(vaultId);
-    if (self && self.appConfig.runningInDebug) {      
+    if (self && self.appConfig.runningInDebug) {
       self.log.debug(`UPDATE ITEM /${ item._ref.id }/ VAULT: ${ actVaultId }`);
     }
     const rebuiltItem = await this.rebuildItem(item);
