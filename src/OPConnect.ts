@@ -210,7 +210,7 @@ export class OPConnector {
     for (let sect of Object.keys(flattened)) {
       newItem = newItem.addSection(sect);
       for (let fieldItem of Object.keys(flattened[sect])) {
-        let endValue = `${ flattened[sect][fieldItem] || '' }`;
+        let endValue = `${ flattened[sect][fieldItem] }`;
         if (Tools.isUndefined(flattened[sect][fieldItem]))
           endValue = 'undefined';
         if (Tools.isNull(flattened[sect][fieldItem]))
@@ -275,7 +275,7 @@ export class OPConnector {
             break;
           }
         }
-        let endValue = `${ flattened[flatItem][iField] || '' }`;
+        let endValue = `${ flattened[flatItem][iField] }`;
         if (Tools.isUndefined(flattened[flatItem][iField]))
           endValue = 'undefined';
         if (Tools.isNull(flattened[flatItem][iField]))
