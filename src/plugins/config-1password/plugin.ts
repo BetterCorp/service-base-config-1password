@@ -27,7 +27,7 @@ export class Config extends CConfig {
   }
 
   private _runningLive: boolean = false;
-  private _debugMode: boolean = true;
+  private _debugMode: boolean = false;
 
   public get runningInDebug(): boolean {
     return this._debugMode;
@@ -104,7 +104,7 @@ export class Config extends CConfig {
       self._defaultLogger.info(`Load 1Pass profile: profile-${ this._deploymentProfile }`);
       try {
         const parsedPluginConfig = await self.onePassword.getParsedItemByTitle(`profile-${ this._deploymentProfile }`);
-        self._debugMode = `${ parsedPluginConfig['Profile Info'].debug || true }` == 'true';
+        self._debugMode = `${ parsedPluginConfig['Profile Info'].debug }` == 'true';
 
         self._appConfig = {
           deploymentProfiles: {},
