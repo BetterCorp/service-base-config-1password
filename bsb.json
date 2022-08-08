@@ -1,0 +1,11 @@
+[{
+  "key": "1password",
+  "name": "1Password",
+  "icon": "bsb-1password.svg",
+  "description": "1Password secrets automation"
+}, {
+  "key": "config-1password",
+  "name": "1Password",
+  "icon": "bsb-1password.svg",
+  "description": "1Password events plugin"
+}]
