@@ -58,8 +58,7 @@ export class Service extends ServicesBase<
       async (title: string, vaultId?: string) =>
         await self.onePassword.getParsedItemByTitle(
           title,
-          await self._getVaultId(vaultId),
-          self
+          await self._getVaultId(vaultId)
         )
     );
     self.onReturnableEvent(
@@ -67,8 +66,7 @@ export class Service extends ServicesBase<
       async (id: string, vaultId?: string) =>
         await self.onePassword.getParsedItemById(
           id,
-          await self._getVaultId(vaultId),
-          self
+          await self._getVaultId(vaultId)
         )
     );
     self.onReturnableEvent(
@@ -100,8 +98,7 @@ export class Service extends ServicesBase<
           category,
           item,
           tags,
-          await self._getVaultId(vaultId),
-          self
+          await self._getVaultId(vaultId)
         )
     );
     self.onReturnableEvent(
@@ -109,8 +106,7 @@ export class Service extends ServicesBase<
       async (item: OPConnectItemParsed, vaultId?: string) =>
         await self.onePassword.replaceItem(
           item,
-          await self._getVaultId(vaultId),
-          self
+          await self._getVaultId(vaultId)
         )
     );
   }

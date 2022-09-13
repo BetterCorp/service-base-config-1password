@@ -1,6 +1,5 @@
 import { FieldType, FullItem, ItemBuilder, OnePasswordConnect, Vault } from "@1password/connect";
 import { FullItemAllOfFields } from '@1password/connect/dist/model/fullItemAllOfFields';
-import { CPlugin } from '@bettercorp/service-base/lib/interfaces/plugins';
 import { IDictionary } from '@bettercorp/tools/lib/Interfaces';
 import { Tools } from '@bettercorp/tools/lib/Tools';
 
@@ -119,11 +118,7 @@ export class OPConnector {
     return vaultId || this.vaultId || '_';
   }
 
-  private parseItem(item: FullItem, self?: CPlugin): any {
-    if (self && self.appConfig.runningInDebug) {
-      self.log.debug(`ParseItem: ${ item.id }`);
-      self.log.debug(JSON.stringify(item, null, 2));
-    }
+  private parseItem(item: FullItem): any {
     let config: any = {
       _: {},
       _fieldDefinitions: {
@@ -168,20 +163,16 @@ export class OPConnector {
         config[mappingKeys[(field.section || { id: '_' }).id || '_'] || '_']);
     }
 
-    if (self && self.appConfig.runningInDebug) {
-      self.log.debug(`ParseDItem: ${ item.id }`);
-      self.log.debug(JSON.stringify(config, null, 2));
-    }
     return config;
   }
 
-  public async getParsedItemByTitle(title: string, vaultId?: string, self?: CPlugin): Promise<OPConnectItemParsed> {
+  public async getParsedItemByTitle(title: string, vaultId?: string): Promise<OPConnectItemParsed> {
     let opItem = await this.onePassword.getItemByTitle(this.getVaultId(vaultId), title);
-    return this.parseItem(opItem, self);
+    return this.parseItem(opItem);
   }
-  public async getParsedItemById(id: string, vaultId?: string, self?: CPlugin): Promise<OPConnectItemParsed> {
+  public async getParsedItemById(id: string, vaultId?: string): Promise<OPConnectItemParsed> {
     let opItem = await this.onePassword.getItem(this.getVaultId(vaultId), id);
-    return this.parseItem(opItem, self);
+    return this.parseItem(opItem);
   }
 
   public async getVault(vaultId?: string): Promise<Vault> {
@@ -226,9 +217,9 @@ export class OPConnector {
     }
     return newItem.build();
   }
-  public async createItem(title: string, category: FullItem.CategoryEnum, item: OPConnectItemBuild, tags?: Array<string>, vaultId?: string, self?: CPlugin): Promise<OPConnectItemParsed> {
+  public async createItem(title: string, category: FullItem.CategoryEnum, item: OPConnectItemBuild, tags?: Array<string>, vaultId?: string): Promise<OPConnectItemParsed> {
     let createdItem = await this.onePassword.createItem(this.getVaultId(vaultId), await this.buildItem(title, category, item, tags));
-    return this.parseItem(createdItem, self);
+    return this.parseItem(createdItem);
   }
   private async rebuildItem(item: OPConnectItemParsed): Promise<FullItem> {
     let newItem = item._ref;
@@ -300,15 +291,9 @@ export class OPConnector {
 
     return newItem;
   }
-  public async replaceItem(item: OPConnectItemParsed, vaultId?: string, self?: CPlugin): Promise<OPConnectItemParsed> {
+  public async replaceItem(item: OPConnectItemParsed, vaultId?: string): Promise<OPConnectItemParsed> {
     const actVaultId = this.getVaultId(vaultId);
-    if (self && self.appConfig.runningInDebug) {
-      self.log.debug(`UPDATE ITEM /${ item._ref.id }/ VAULT: ${ actVaultId }`);
-    }
     const rebuiltItem = await this.rebuildItem(item);
-    if (self && self.appConfig.runningInDebug) {
-      self.log.debug(JSON.stringify(rebuiltItem, null, 2));
-    }
     const createdItem = await this.onePassword.updateItem(actVaultId, rebuiltItem);
     return this.parseItem(createdItem);
   }
