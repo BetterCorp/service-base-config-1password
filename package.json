@@ -2,7 +2,7 @@
   "name": "@bettercorp/service-base-plugin-config-1password",
   "license": "AGPL-3.0-only",
   "repository": {
-    "url": "https://gitlab.com/BetterCorp/BetterServiceBase/service-base-plugin-config-1password"
+    "url": "https://github.com/BetterCorp/service-base-plugin-1password"
   },
   "scripts": {
     "dev": "nodemon --config node_modules/@bettercorp/service-base/build/nodemon.json",

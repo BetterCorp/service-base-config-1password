@@ -1,44 +1,117 @@
-import { FullItem, Vault } from '@1password/connect';
-import { CPlugin } from "@bettercorp/service-base/lib/interfaces/plugins";
-import { OPConnectItemBuild, OPConnectItemParsed, OPConnector, SimpleItem } from '../../OPConnect';
-import { MyPluginConfig } from './sec.config';
+import { FullItem, Vault } from "@1password/connect";
+import { ServiceCallable, ServicesBase } from "@bettercorp/service-base";
+import {
+  OPConnectItemBuild,
+  OPConnectItemParsed,
+  OPConnector,
+  SimpleItem,
+} from "../../OPConnect";
+import { MyPluginConfig } from "./sec.config";
 
-export class Plugin extends CPlugin<MyPluginConfig> {
+export interface OnePasswordReturnableEvents extends ServiceCallable {
+  getParsedItemByTitle(
+    title: string,
+    vaultId?: string
+  ): Promise<OPConnectItemParsed>;
+  getParsedItemById(id: string, vaultId?: string): Promise<OPConnectItemParsed>;
+  getVault(vaultId?: string): Promise<Vault>;
+  listVaults(): Promise<Array<Vault>>;
+  listItems(vaultId?: string): Promise<Array<SimpleItem>>;
+  createItem(
+    title: string,
+    category: FullItem.CategoryEnum,
+    item: OPConnectItemBuild,
+    tags?: Array<string>,
+    vaultId?: string
+  ): Promise<OPConnectItemParsed>;
+  replaceItem(
+    item: OPConnectItemParsed,
+    vaultId?: string
+  ): Promise<OPConnectItemParsed>;
+}
+
+export class Service extends ServicesBase<
+  ServiceCallable,
+  ServiceCallable,
+  OnePasswordReturnableEvents,
+  ServiceCallable,
+  ServiceCallable,
+  MyPluginConfig
+> {
   private onePassword!: OPConnector;
 
-  init(): Promise<void> {
-    const self = this;
-    return new Promise(async (resolve) => {
-      self.onePassword = new OPConnector((await self.getPluginConfig()).serverUrl, (await self.getPluginConfig()).token, (await self.getPluginConfig()).vaultId);
-      resolve();
-    });
-  }
-
   private async _getVaultId(vaultId?: string): Promise<string> {
-    if ((await this.getPluginConfig()).lockToVault) return (await this.getPluginConfig()).vaultId;
+    if ((await this.getPluginConfig()).lockToVault)
+      return (await this.getPluginConfig()).vaultId;
     return vaultId || (await this.getPluginConfig()).vaultId;
   }
+  async init() {
+    const self = this;
+    self.onePassword = new OPConnector(
+      (await self.getPluginConfig()).serverUrl,
+      (await self.getPluginConfig()).token,
+      (await self.getPluginConfig()).vaultId
+    );
 
-  public async getParsedItemByTitle(title: string, vaultId?: string): Promise<OPConnectItemParsed> {
-    return await this.onePassword.getParsedItemByTitle(title, await this._getVaultId(vaultId), this);
-  }
-  public async getParsedItemById(id: string, vaultId?: string): Promise<OPConnectItemParsed> {
-    return await this.onePassword.getParsedItemById(id, await this._getVaultId(vaultId), this);
-  }
-  public async getVault(vaultId?: string): Promise<Vault> {
-    return await this.onePassword.getVault(await this._getVaultId(vaultId));
-  }
-  public async listVaults(): Promise<Array<Vault>> {
-    if ((await this.getPluginConfig()).lockToVault) throw 'Not allowed to view vaults';
-    return await this.onePassword.listVaults();
-  }
-  public async listItems(vaultId?: string): Promise<Array<SimpleItem>> {
-    return await this.onePassword.listItems(await this._getVaultId(vaultId));
-  }
-  public async createItem(title: string, category: FullItem.CategoryEnum, item: OPConnectItemBuild, tags?: Array<string>, vaultId?: string): Promise<OPConnectItemParsed> {
-    return await this.onePassword.createItem(title, category, item, tags, await this._getVaultId(vaultId), this);
-  }
-  public async replaceItem(item: OPConnectItemParsed, vaultId?: string): Promise<OPConnectItemParsed> {
-    return await this.onePassword.replaceItem(item, await this._getVaultId(vaultId), this);
+    self.onReturnableEvent(
+      "getParsedItemByTitle",
+      async (title: string, vaultId?: string) =>
+        await self.onePassword.getParsedItemByTitle(
+          title,
+          await self._getVaultId(vaultId),
+          self
+        )
+    );
+    self.onReturnableEvent(
+      "getParsedItemById",
+      async (id: string, vaultId?: string) =>
+        await self.onePassword.getParsedItemById(
+          id,
+          await self._getVaultId(vaultId),
+          self
+        )
+    );
+    self.onReturnableEvent(
+      "getVault",
+      async (vaultId?: string) =>
+        await self.onePassword.getVault(await self._getVaultId(vaultId))
+    );
+    self.onReturnableEvent("listVaults", async () => {
+      if ((await this.getPluginConfig()).lockToVault)
+        throw "Not allowed to view vaults";
+      return await this.onePassword.listVaults();
+    });
+    self.onReturnableEvent(
+      "listItems",
+      async (vaultId?: string) =>
+        await self.onePassword.listItems(await self._getVaultId(vaultId))
+    );
+    self.onReturnableEvent(
+      "createItem",
+      async (
+        title: string,
+        category: FullItem.CategoryEnum,
+        item: OPConnectItemBuild,
+        tags?: Array<string>,
+        vaultId?: string
+      ) =>
+        await self.onePassword.createItem(
+          title,
+          category,
+          item,
+          tags,
+          await self._getVaultId(vaultId),
+          self
+        )
+    );
+    self.onReturnableEvent(
+      "replaceItem",
+      async (item: OPConnectItemParsed, vaultId?: string) =>
+        await self.onePassword.replaceItem(
+          item,
+          await self._getVaultId(vaultId),
+          self
+        )
+    );
   }
 }

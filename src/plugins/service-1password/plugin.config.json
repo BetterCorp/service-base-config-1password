@@ -1,5 +1,5 @@
 {
-  "key": "1password",
+  "key": "service-1password",
   "name": "1Password",
   "icon": "1password.png",
   "description": "1Password secrets automation"

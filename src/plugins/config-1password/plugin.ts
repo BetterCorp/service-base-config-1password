@@ -1,83 +1,208 @@
-import { CConfig, DeploymentProfile, DeploymentProfiles, IPluginConfig, ServiceConfig } from "@bettercorp/service-base/lib/interfaces/config";
-import { IPluginLogger } from '@bettercorp/service-base/lib/interfaces/logger';
-import { IDictionary } from '@bettercorp/tools/lib/Interfaces';
-import { Tools } from '@bettercorp/tools/lib/Tools';
-import { OPConnector } from '../../OPConnect';
+import { ConfigBase } from "@bettercorp/service-base";
+import {
+  DeploymentProfile,
+  DeploymentProfiles,
+  IPluginConfig,
+  ServiceConfig,
+} from "@bettercorp/service-base/lib/interfaces/config";
+import { IPluginLogger } from "@bettercorp/service-base/lib/interfaces/logger";
+import { IDictionary } from "@bettercorp/tools/lib/Interfaces";
+import { OPConnector } from "../../OPConnect";
+import { PluginConfig } from "./sec.config";
 
-export class Config extends CConfig {
-  private onePassword: OPConnector;
+export class Config extends ConfigBase<PluginConfig> {
   private _appConfig!: ServiceConfig;
 
-  constructor(logger: IPluginLogger, cwd: string, deploymentProfile: string) {
-    super(logger, cwd, deploymentProfile);
-
-    let serverURL = process.env.BSB_OP_SERVER_URL;
-    let token = process.env.BSB_OP_TOKEN;
-    let vaultId = process.env.BSB_OP_VAULT;
-
-    if (Tools.isNullOrUndefined(serverURL) || serverURL === '') throw `ENV BSB_OP_SERVER_URL is not defined for OnePassword Server Url`;
-    if (Tools.isNullOrUndefined(token) || token === '') throw `ENV BSB_OP_TOKEN is not defined for OnePassword Token`;
-    if (Tools.isNullOrUndefined(vaultId) || vaultId === '') throw `ENV BSB_OP_VAULT is not defined for OnePassword Vault ID`;
-
-    this.onePassword = new OPConnector(serverURL!, token!, vaultId!);
-
-    if (!Tools.isNullOrUndefined(process.env.BSB_LIVE)) {
-      this._runningLive = true;
-    }
+  private _onePassword!: OPConnector;
+  private async onePassword() {
+    if (this._onePassword !== undefined) return this._onePassword;
+    this.log.info("Load 1Pass profile: profile-{deploymentProfile}", {
+      deploymentProfile: this._deploymentProfile,
+    });
+    const pluginPlugin = await this.getPluginConfig();
+    this._onePassword = new OPConnector(
+      pluginPlugin.serverURL,
+      pluginPlugin.token,
+      pluginPlugin.vaultId
+    );
+    return this._onePassword;
   }
 
-  private _runningLive: boolean = false;
-  private _debugMode: boolean = false;
-
-  public get runningInDebug(): boolean {
-    return this._debugMode;
+  constructor(
+    pluginName: string,
+    cwd: string,
+    log: IPluginLogger,
+    deploymentProfile: string
+  ) {
+    super(pluginName, cwd, log, deploymentProfile);
   }
-  public get runningLive(): boolean {
-    return this._runningLive;
-  }
-
   private get activeDeploymentProfile(): DeploymentProfiles<DeploymentProfile> {
-    return this._appConfig.deploymentProfiles[this._deploymentProfile] as any;
+    return (this._appConfig.deploymentProfiles as IDictionary)[
+      this._deploymentProfile
+    ];
   }
-  public async getPluginDeploymentProfile(pluginName: string): Promise<DeploymentProfile> {
-    let pluginMap = (await this.activeDeploymentProfile)[pluginName!];
-    if (Tools.isNullOrUndefined(pluginMap)) {
-      this._defaultLogger.debug(`Plugin state: ${ pluginName } / enabled: false`);
-      return {
+  public override async getAppPluginDeploymentProfile(
+    pluginName: string
+  ): Promise<DeploymentProfile> {
+    return this.activeDeploymentProfile[pluginName!];
+  }
+
+  public override async getAppMappedPluginConfig<T extends IPluginConfig>(
+    mappedPluginName: string
+  ): Promise<T> {
+    if (this._appConfig.plugins[mappedPluginName] === undefined) {
+      this._appConfig.plugins[mappedPluginName] = await this.getOPPluginConfig(
+        mappedPluginName
+      );
+    }
+    return (this._appConfig.plugins[mappedPluginName] || {}) as T;
+  }
+  public override async getAppMappedPluginDeploymentProfile(
+    mappedPluginName: string
+  ): Promise<DeploymentProfile> {
+    for (let dpPlugin of Object.keys(this.activeDeploymentProfile)) {
+      if (
+        this.activeDeploymentProfile[dpPlugin].mappedName === mappedPluginName
+      )
+        return this.activeDeploymentProfile[dpPlugin];
+    }
+    this.log.fatal("Cannot find mapped plugin {mappedPluginName}", {
+      mappedPluginName,
+    });
+    return undefined as any; // will not reach
+  }
+
+  public override async getAppPluginMappedName(
+    pluginName: string
+  ): Promise<string> {
+    return (
+      (this.activeDeploymentProfile[pluginName] || {}).mappedName || pluginName
+    );
+  }
+  public override async getAppPluginState(
+    pluginName: string
+  ): Promise<boolean> {
+    return (this.activeDeploymentProfile[pluginName] || {}).enabled || false;
+  }
+  public override async getAppMappedPluginState(
+    mappedPluginName: string
+  ): Promise<boolean> {
+    return (await this.getAppMappedPluginDeploymentProfile(mappedPluginName))
+      .enabled;
+  }
+
+  public override async createAppConfig(
+    listOfKnownPlugins: Array<string>
+  ): Promise<void> {
+    try {
+      const parsedPluginConfig = await (
+        await this.onePassword()
+      ).getParsedItemByTitle(`profile-${this._deploymentProfile}`);
+
+      this._appConfig = {
+        deploymentProfiles: {
+          default: {},
+        },
+        plugins: {},
+      };
+
+      this.log.info("- Got profile, parsing plugins now");
+      this._appConfig.deploymentProfiles[this._deploymentProfile] =
+        (await this.parseDeploymentProfile(parsedPluginConfig)) as any;
+
+      for (let deploymentProfilePlugin of Object.keys(
+        this._appConfig.deploymentProfiles[this._deploymentProfile]
+      )) {
+        let pluginDep = (
+          this._appConfig.deploymentProfiles[this._deploymentProfile] as any
+        )[deploymentProfilePlugin] as DeploymentProfile;
+        this.log.debug(
+          "CHECK plugin definition: {deploymentProfilePlugin}={mappedName} [{enabled}]",
+          {
+            deploymentProfilePlugin,
+            mappedName: pluginDep.mappedName,
+            enabled: pluginDep.enabled ? "enabled" : "disabled",
+          }
+        );
+
+        /*try {
+          this._appConfig.plugins[pluginDep.mappedName] =
+            await this.getOPPluginConfig(pluginDep.mappedName);
+        } catch (xc: any) {
+          this.log.error(
+            'cannot get plugin {mappedName} from config... we will create the entry',
+            {mappedName: pluginDep.mappedName}
+          );
+          this.log.error(xc);
+          this._appConfig.plugins[pluginDep.mappedName] = {};
+        }*/
+      }
+    } catch (exc: any) {
+      this.log.error("Cannot find profile profile-{deploymentProfile}", {
+        deploymentProfile: this._deploymentProfile,
+      });
+      this.log.fatal(exc);
+    }
+
+    let existingDefinedPlugins = Object.keys(
+      this._appConfig.deploymentProfiles.default
+    );
+    let pluginsToAdd = listOfKnownPlugins.filter(
+      (x) => existingDefinedPlugins.indexOf(x) < 0
+    );
+    for (let pluginName of pluginsToAdd) {
+      this._appConfig.deploymentProfiles.default[pluginName] = {
         mappedName: pluginName,
         enabled: false,
       };
     }
-    this._defaultLogger.debug(`Plugin state: ${ pluginName } / mapName: ${ pluginMap.mappedName } / enabled: ${ pluginMap.enabled }`);
-    return pluginMap;
   }
-  public async getPluginConfig<T extends IPluginConfig>(pluginName: string): Promise<T> {
-    let mappedName = (await this.getPluginDeploymentProfile(pluginName)).mappedName;
-    return (this._appConfig.plugins[mappedName] || {}) as T;
+  public override async migrateAppPluginConfig(
+    pluginName: string,
+    mappedPluginName: string,
+    config: IPluginConfig
+  ): Promise<void> {
+    this._appConfig.deploymentProfiles[this._deploymentProfile][pluginName] =
+      this._appConfig.deploymentProfiles[this._deploymentProfile][
+        pluginName
+      ] || {
+        mappedName: mappedPluginName,
+        enabled: true,
+      };
+    this._appConfig.deploymentProfiles[this._deploymentProfile][
+      pluginName
+    ].enabled = true;
+    this._appConfig.plugins[mappedPluginName] = config;
   }
 
-  private async parseDeploymentProfile(parsedItem: any): Promise<IDictionary<DeploymentProfile>> {
+  private async parseDeploymentProfile(
+    parsedItem: any
+  ): Promise<IDictionary<DeploymentProfile>> {
     let deploymentProfile: IDictionary<DeploymentProfile> = {};
 
     let mappingKeys = [
-      'Plugin Maps (Events)',
-      'Plugin Maps (Logging)',
-      'Plugin Maps (Plugins)'
+      "Plugin Maps (Events)",
+      "Plugin Maps (Logging)",
+      "Plugin Maps (Plugins)",
     ];
     for (let fieldKey of mappingKeys) {
       for (let pluginDef of Object.keys(parsedItem[fieldKey])) {
         let mapName = parsedItem[fieldKey][pluginDef];
-        let enabled = mapName.length > 2 && mapName !== 'false' && mapName !== false;
+        let enabled =
+          mapName.length > 2 && mapName !== "false" && mapName !== false;
         let sDisabled = false;
-        if (mapName.length > 0 && mapName[0] === '!') {
+        if (mapName.length > 0 && mapName[0] === "!") {
           enabled = false;
           sDisabled = true;
           mapName = mapName.substring(1);
         }
-        this._defaultLogger.debug(`Plugin map: [${ pluginDef }]=${ mapName } / enabled:${ enabled } / disabled but named: better${ sDisabled }`);
+        this.log.debug(
+          "Plugin map: [{pluginDef}]={mapName} / enabled:{enabled} / disabled but named: better{sDisabled}",
+          { pluginDef, mapName, enabled, sDisabled }
+        );
         deploymentProfile[pluginDef] = {
           mappedName: mapName,
-          enabled: enabled
+          enabled: enabled,
         };
       }
     }
@@ -87,67 +212,16 @@ export class Config extends CConfig {
   private async getOPPluginConfig(pluginName: string): Promise<any> {
     const self = this;
     return new Promise(async (resolve, reject) => {
-      self._defaultLogger.info(`Load 1Pass plugin: ${ pluginName }`);
+      self.log.info("Load 1Pass plugin: {pluginName}", { pluginName });
       try {
-        const parsedItem = await self.onePassword.getParsedItemByTitle(pluginName);
+        const parsedItem = await (
+          await self.onePassword()
+        ).getParsedItemByTitle(pluginName);
         resolve(parsedItem.Config);
       } catch (exc) {
-        self._defaultLogger.fatal(`Cannot find plugin ${ pluginName }`);
+        self.log.fatal("Cannot find plugin {pluginName}", { pluginName });
         reject();
       }
     });
-  }
-
-  async refreshAppConfig(): Promise<void> {
-    const self = this;
-    return new Promise(async (resolve, reject) => {
-      self._defaultLogger.info(`Load 1Pass profile: profile-${ this._deploymentProfile }`);
-      try {
-        const parsedPluginConfig = await self.onePassword.getParsedItemByTitle(`profile-${ this._deploymentProfile }`);
-        self._debugMode = `${ parsedPluginConfig['Profile Info'].debug }` == 'true';
-
-        self._appConfig = {
-          deploymentProfiles: {},
-          plugins: {}
-        } as any;
-
-        self._defaultLogger.info('- Got profile, parsing plugins now');
-        self._appConfig.deploymentProfiles[self._deploymentProfile] = await self.parseDeploymentProfile(parsedPluginConfig) as any;
-
-        for (let deploymentProfilePlugin of Object.keys(self._appConfig.deploymentProfiles[self._deploymentProfile])) {
-          let pluginDep = (self._appConfig.deploymentProfiles[self._deploymentProfile] as any)[deploymentProfilePlugin] as DeploymentProfile;
-          self._defaultLogger.debug(`CHECK plugin definition: ${ deploymentProfilePlugin }=${ pluginDep.mappedName } [${ pluginDep.enabled ? 'enabled' : 'disabled' }]`);
-          //if (!pluginDep.enabled) continue;
-          try {
-            self._appConfig.plugins[pluginDep.mappedName] = await self.getOPPluginConfig(pluginDep.mappedName);
-          } catch (xc) {
-            self._defaultLogger.warn(`cannot get plugin ${ pluginDep.mappedName } from config... we will create the entry`, xc);
-            self._appConfig.plugins[pluginDep.mappedName] = {};
-          }
-        }
-        resolve();
-      } catch (exc) {
-        self._defaultLogger.fatal(`Cannot find profile profile-${ this._deploymentProfile }`, exc);
-        reject();
-      }
-    });
-  }
-
-  async updateAppConfig(pluginName?: string, mappedPluginName?: string, config?: IPluginConfig): Promise<void> {
-    if (!Tools.isNullOrUndefined(pluginName)) {
-      this._defaultLogger.debug(`Plugin check ${ pluginName } as ${ mappedPluginName }`);
-      if (Tools.isNullOrUndefined(await this.getPluginDeploymentProfile(pluginName!))) {
-        ((this._appConfig.deploymentProfiles[this._deploymentProfile] as any)[pluginName!] as DeploymentProfile) = {
-          mappedName: mappedPluginName || pluginName!,
-          enabled: false
-        };
-      }
-      if (Tools.isNullOrUndefined(this._appConfig.plugins[mappedPluginName!])) {
-        this._appConfig.plugins[mappedPluginName!] = {};
-      }
-      if (!Tools.isNullOrUndefined(config)) {
-        this._appConfig.plugins[mappedPluginName!] = config!;
-      }
-    }
   }
 }
