@@ -4,11 +4,13 @@
   "repository": {
     "url": "https://github.com/BetterCorp/service-base-plugin-1password"
   },
+  "engines": {
+    "npm": ">=8.0.0",
+    "node": ">=16.0.0"
+  },
   "scripts": {
     "dev": "nodemon --config node_modules/@bettercorp/service-base/build/nodemon.json",
     "build": "tsc",
-    "version": "node ./node_modules/@bettercorp/service-base/build/version-bcorp.js $0",
-    "create": "ts-node node_modules/@bettercorp/service-base/lib/bootstrap.js $0",
     "start": "ts-node node_modules/@bettercorp/service-base/lib/index.js"
   },
   "files": [
