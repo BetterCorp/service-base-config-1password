@@ -53,7 +53,7 @@ export class Service extends ServicesBase<
       (await self.getPluginConfig()).vaultId
     );
 
-    self.onReturnableEvent(
+    await self.onReturnableEvent(
       "getParsedItemByTitle",
       async (title: string, vaultId?: string) =>
         await self.onePassword.getParsedItemByTitle(
@@ -61,7 +61,7 @@ export class Service extends ServicesBase<
           await self._getVaultId(vaultId)
         )
     );
-    self.onReturnableEvent(
+    await self.onReturnableEvent(
       "getParsedItemById",
       async (id: string, vaultId?: string) =>
         await self.onePassword.getParsedItemById(
@@ -69,22 +69,22 @@ export class Service extends ServicesBase<
           await self._getVaultId(vaultId)
         )
     );
-    self.onReturnableEvent(
+    await self.onReturnableEvent(
       "getVault",
       async (vaultId?: string) =>
         await self.onePassword.getVault(await self._getVaultId(vaultId))
     );
-    self.onReturnableEvent("listVaults", async () => {
+    await self.onReturnableEvent("listVaults", async () => {
       if ((await this.getPluginConfig()).lockToVault)
         throw "Not allowed to view vaults";
       return await this.onePassword.listVaults();
     });
-    self.onReturnableEvent(
+    await self.onReturnableEvent(
       "listItems",
       async (vaultId?: string) =>
         await self.onePassword.listItems(await self._getVaultId(vaultId))
     );
-    self.onReturnableEvent(
+    await self.onReturnableEvent(
       "createItem",
       async (
         title: string,
@@ -101,7 +101,7 @@ export class Service extends ServicesBase<
           await self._getVaultId(vaultId)
         )
     );
-    self.onReturnableEvent(
+    await self.onReturnableEvent(
       "replaceItem",
       async (item: OPConnectItemParsed, vaultId?: string) =>
         await self.onePassword.replaceItem(

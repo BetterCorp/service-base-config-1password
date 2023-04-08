@@ -30,11 +30,12 @@ export class Config extends ConfigBase<PluginConfig> {
 
   constructor(
     pluginName: string,
+    pluginCwd: string,
     cwd: string,
     log: IPluginLogger,
     deploymentProfile: string
   ) {
-    super(pluginName, cwd, log, deploymentProfile);
+    super(pluginName, cwd, pluginCwd, log, deploymentProfile);
   }
   private get activeDeploymentProfile(): DeploymentProfiles<DeploymentProfile> {
     return (this._appConfig.deploymentProfiles as IDictionary)[
@@ -106,7 +107,7 @@ export class Config extends ConfigBase<PluginConfig> {
         plugins: {},
       };
 
-      this.log.info("- Got profile, parsing plugins now");
+      await this.log.info("- Got profile, parsing plugins now");
       this._appConfig.deploymentProfiles[this._deploymentProfile] =
         (await this.parseDeploymentProfile(parsedPluginConfig)) as any;
 
@@ -116,7 +117,7 @@ export class Config extends ConfigBase<PluginConfig> {
         let pluginDep = (
           this._appConfig.deploymentProfiles[this._deploymentProfile] as any
         )[deploymentProfilePlugin] as DeploymentProfile;
-        this.log.debug(
+        await this.log.debug(
           "CHECK plugin definition: {deploymentProfilePlugin}={mappedName} [{enabled}]",
           {
             deploymentProfilePlugin,
@@ -138,10 +139,10 @@ export class Config extends ConfigBase<PluginConfig> {
         }*/
       }
     } catch (exc: any) {
-      this.log.error("Cannot find profile profile-{deploymentProfile}", {
+      await this.log.error("Cannot find profile profile-{deploymentProfile}", {
         deploymentProfile: this._deploymentProfile,
       });
-      this.log.fatal(exc);
+      await this.log.fatal(exc);
     }
 
     let existingDefinedPlugins = Object.keys(
@@ -196,7 +197,7 @@ export class Config extends ConfigBase<PluginConfig> {
           sDisabled = true;
           mapName = mapName.substring(1);
         }
-        this.log.debug(
+        await this.log.debug(
           "Plugin map: [{pluginDef}]={mapName} / enabled:{enabled} / disabled but named: better{sDisabled}",
           { pluginDef, mapName, enabled, sDisabled }
         );

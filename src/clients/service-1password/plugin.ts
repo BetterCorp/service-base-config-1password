@@ -10,15 +10,13 @@ import {
   SimpleItem,
 } from "../../OPConnect";
 import { OnePasswordReturnableEvents } from "../../plugins/service-1password/plugin";
-import { MyPluginConfig } from "../../plugins/service-1password/sec.config";
 
 export class onePasswordClient extends ServicesClient<
   ServiceCallable,
   ServiceCallable,
   OnePasswordReturnableEvents,
   ServiceCallable,
-  ServiceCallable,
-  MyPluginConfig
+  ServiceCallable
 > {
   public readonly _pluginName: string = "service-1password";
   constructor(self: ServicesBase) {
